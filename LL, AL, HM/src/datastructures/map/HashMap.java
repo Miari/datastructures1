@@ -3,11 +3,8 @@ package datastructures.map;
 import java.util.*;
 
 public class HashMap<K, V> implements Map<K, V> {
-
-    //private static final int INITIAL_CAPACITY = 5;
     private static int initialCapacity = 5;
     private static final int GROWTH_FACTOR = 2;
-    //private static final double LOAD_FACTOR = 0.75;
     private static double loadFactor = 0.75;
 
     private ArrayList<Entry<K, V>>[] buckets = new ArrayList[initialCapacity];

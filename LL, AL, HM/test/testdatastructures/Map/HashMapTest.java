@@ -11,8 +11,8 @@ import java.util.Iterator;
 import static org.junit.Assert.*;
 
 public class HashMapTest {
-    private Map <Object, String> firstMap = new HashMap<>(3, 0.6);
-    private Map <Object, String> secondMap = new HashMap<>(3, 0.6);
+    private Map<Object, String> firstMap = new HashMap<>(3, 0.6);
+    private Map<Object, String> secondMap = new HashMap<>(3, 0.6);
 
     @Before
     public void fillMap() {
@@ -65,7 +65,7 @@ public class HashMapTest {
 
     public void testPutAll() {
         firstMap.putAll(secondMap);
-        for (HashMap.Entry <Object, String> entry : secondMap) {
+        for (HashMap.Entry<Object, String> entry : secondMap) {
             Object key = entry.getKey();
             assertTrue(firstMap.containsKey(key));
             assertEquals(firstMap.get(key), secondMap.get(key));
@@ -108,7 +108,7 @@ public class HashMapTest {
 
     @Test
     public void testForEach() {
-        for (HashMap.Entry <Object, String> entry: firstMap) {
+        for (HashMap.Entry<Object, String> entry : firstMap) {
             Object key = entry.getKey();
             assertTrue(firstMap.containsKey(key));
         }
