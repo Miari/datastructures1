@@ -4,21 +4,29 @@ import java.util.*;
 
 public class HashMap<K, V> implements Map<K, V> {
 
-    private static final int INITIAL_CAPACITY = 5;
+    //private static final int INITIAL_CAPACITY = 5;
+    private static int initialCapacity = 5;
     private static final int GROWTH_FACTOR = 2;
-    private static final double LOAD_FACTOR = 0.75;
+    //private static final double LOAD_FACTOR = 0.75;
+    private static double loadFactor = 0.75;
 
-    private int newCapacity = INITIAL_CAPACITY; //не могу сделать её локальной переменной метода rebuild, т.к. она испрользуется также в методе getIndex (где я не могу использовать buckets.length, потому что он вызывается митодом add для ArrayList<Entry>[] newBuckets)
-
-    private ArrayList<Entry<K, V>>[] buckets = new ArrayList[INITIAL_CAPACITY];
+    private ArrayList<Entry<K, V>>[] buckets = new ArrayList[initialCapacity];
     private int size;
+
+    public HashMap() {
+    }
+
+    public HashMap(int initialCapacity, double loadFactor) {
+        this.initialCapacity = initialCapacity;
+        this.loadFactor = loadFactor;
+    }
 
     @Override
     public V put(K key, V value) {
         Entry<K, V> result = getEntry(key);
         if (result == null) {
             add(key, value);
-            if (size > buckets.length * LOAD_FACTOR) {
+            if (size > buckets.length * loadFactor) {
                 rebalance();
             }
             return null;
@@ -40,7 +48,7 @@ public class HashMap<K, V> implements Map<K, V> {
         Entry<K, V> result = getEntry(key);
         if (result == null) {
             add(key, value);
-            if (size > buckets.length * LOAD_FACTOR) {
+            if (size > buckets.length * loadFactor) {
                 rebalance();
             }
             return null;
@@ -89,13 +97,13 @@ public class HashMap<K, V> implements Map<K, V> {
         return size;
     }
 
-    public String toString() {
+    /*public String toString() {
         StringJoiner result = new StringJoiner("; ");
         for (Entry<K, V> current : this) {
-            result.add(String.valueOf(current.key + ": " + current.value));
+            result.add(current.key + ": " + current.value);
         }
         return result.toString();
-    }
+    }*/
 
     public static class Entry<K, V> {
         private K key;
@@ -116,33 +124,37 @@ public class HashMap<K, V> implements Map<K, V> {
     }
 
     private int getIndex(K key) {
+        return getIndex(key, buckets);
+    }
+
+    private int getIndex(K key, ArrayList[] buckets) {
         if (key == null) {
             return 0;
         }
-        return Math.abs(key.hashCode() % newCapacity);
+        return Math.abs(key.hashCode() % buckets.length);
     }
 
     private void add(K key, V value) {
-        int index = getIndex(key);
-        if (buckets[index] == null) {
-            buckets[index] = new ArrayList<>();
-        }
-        buckets[index].add(new Entry<>(key, value));
+        add(key, value, buckets);
         size++;
     }
 
     private void add(K key, V value, ArrayList<Entry<K, V>>[] newBuckets) {
-        int index = getIndex(key);
+        int index = getIndex(key, newBuckets);
         if (newBuckets[index] == null) {
             newBuckets[index] = new ArrayList<>();
         }
+        // Отвечаю на вопрос, почему здесь Entry просто добавляется в конец, без проверкт, существует ли этот эдемент.
+        // Этот метод у меня именно на добавление. Он используется исключиьтельно для того, чтобы добавить Entry.
+        // Соответственно, если нужна проверка, существеует ли уже Entry в bucket.е, она осуществляется в другом методе с помощью метода getEntry(key), а метод add вызывается в последствии, только в том случае, если Entry не найдена.
+        // Например, это методы put и putIfAbsent. Там я сначала ишу Entry с помощью метода getEntry(key) и только если получаю null, т.е. такой Entry нет, то вызваю метод add.
         newBuckets[index].add(new Entry<>(key, value));
     }
 
     private Entry<K, V> getEntry(K key) {
         int index = getIndex(key);
         if (buckets[index] != null) {
-            for (Entry current : buckets[index]) {
+            for (Entry<K, V> current : buckets[index]) {
                 if (Objects.equals(current.key, key)) {
                     return current;
                 }
@@ -152,8 +164,7 @@ public class HashMap<K, V> implements Map<K, V> {
     }
 
     private void rebalance() {
-        newCapacity = buckets.length * GROWTH_FACTOR;
-        ArrayList<Entry<K, V>>[] newBuckets = new ArrayList[newCapacity];
+        ArrayList<Entry<K, V>>[] newBuckets = new ArrayList[buckets.length * GROWTH_FACTOR];
         for (Entry<K, V> entry : this) {
             add(entry.key, entry.value, newBuckets);
         }
@@ -166,7 +177,7 @@ public class HashMap<K, V> implements Map<K, V> {
     }
 
     private class MyIterator implements Iterator<Entry<K, V>> {
-        int bucketIndex;
+        private int bucketIndex;
 
         List<Entry<K, V>> bucket = buckets[bucketIndex];
         Iterator<Entry<K, V>> bucketIterator = bucket.iterator();
@@ -197,6 +208,7 @@ public class HashMap<K, V> implements Map<K, V> {
         @Override
         public void remove() {
             bucketIterator.remove();
+            size--;
         }
     }
 }
