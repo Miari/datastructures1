@@ -3,18 +3,20 @@ package datastructures.map;
 import java.util.*;
 
 public class HashMap<K, V> implements Map<K, V> {
-    private static int initialCapacity = 5;
+    private static final int DEFAULT_INITIAL_CAPACITY = 5;
     private static final int GROWTH_FACTOR = 2;
-    private static double loadFactor = 0.75;
+    private static double DEFAULT_LOAD_FACTOR = 0.75;
 
-    private ArrayList<Entry<K, V>>[] buckets = new ArrayList[initialCapacity];
+    private double loadFactor;
+    private ArrayList<Entry<K, V>>[] buckets;
     private int size;
 
     public HashMap() {
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
     public HashMap(int initialCapacity, double loadFactor) {
-        this.initialCapacity = initialCapacity;
+        buckets = new ArrayList[initialCapacity];
         this.loadFactor = loadFactor;
     }
 
@@ -73,8 +75,8 @@ public class HashMap<K, V> implements Map<K, V> {
     public V remove(K key) {
         int index = getIndex(key);
         if (buckets[index] != null) {
-            for (Iterator iterator = buckets[index].iterator(); iterator.hasNext(); ) {
-                Entry<K, V> current = (Entry<K, V>) iterator.next();
+            for (Iterator<Entry<K, V>> iterator = buckets[index].iterator(); iterator.hasNext(); ) {
+                Entry<K, V> current = iterator.next();
                 if (Objects.equals(current.key, key)) {
                     iterator.remove();
                     return current.value;
@@ -94,13 +96,13 @@ public class HashMap<K, V> implements Map<K, V> {
         return size;
     }
 
-    /*public String toString() {
+    public String toString() {
         StringJoiner result = new StringJoiner("; ");
         for (Entry<K, V> current : this) {
             result.add(current.key + ": " + current.value);
         }
         return result.toString();
-    }*/
+    }
 
     public static class Entry<K, V> {
         private K key;
@@ -110,7 +112,7 @@ public class HashMap<K, V> implements Map<K, V> {
             return key;
         }
 
-        public V getValue() {
+        private V getValue() {
             return value;
         }
 
@@ -141,10 +143,6 @@ public class HashMap<K, V> implements Map<K, V> {
         if (newBuckets[index] == null) {
             newBuckets[index] = new ArrayList<>();
         }
-        // Отвечаю на вопрос, почему здесь Entry просто добавляется в конец, без проверкт, существует ли этот эдемент.
-        // Этот метод у меня именно на добавление. Он используется исключиьтельно для того, чтобы добавить Entry.
-        // Соответственно, если нужна проверка, существеует ли уже Entry в bucket.е, она осуществляется в другом методе с помощью метода getEntry(key), а метод add вызывается в последствии, только в том случае, если Entry не найдена.
-        // Например, это методы put и putIfAbsent. Там я сначала ишу Entry с помощью метода getEntry(key) и только если получаю null, т.е. такой Entry нет, то вызваю метод add.
         newBuckets[index].add(new Entry<>(key, value));
     }
 
@@ -174,12 +172,33 @@ public class HashMap<K, V> implements Map<K, V> {
     }
 
     private class MyIterator implements Iterator<Entry<K, V>> {
-        private int bucketIndex;
 
-        List<Entry<K, V>> bucket = buckets[bucketIndex];
-        Iterator<Entry<K, V>> bucketIterator = bucket.iterator();
+        private int bucketIndex;
+        Iterator<Entry<K, V>> bucketIterator;
+
+        MyIterator() {
+            while (buckets[bucketIndex] == null && bucketIndex < buckets.length) {
+                bucketIndex++;
+            }
+            bucketIterator = buckets[bucketIndex].iterator();
+        }
 
         public boolean hasNext() {
+            boolean changeOfBucketIndexIndicator = false;
+            if (bucketIndex >= buckets.length) {
+                return false;
+            }
+            while (buckets[bucketIndex] == null) {
+                bucketIndex++;
+                changeOfBucketIndexIndicator = true;
+                if (bucketIndex >= buckets.length) {
+                    return false;
+                }
+            }
+            if (changeOfBucketIndexIndicator) {
+                bucketIterator = buckets[bucketIndex].iterator();
+            }
+
             if (!bucketIterator.hasNext()) {
                 bucketIndex++;
                 if (bucketIndex >= buckets.length) {
@@ -191,9 +210,9 @@ public class HashMap<K, V> implements Map<K, V> {
                         return false;
                     }
                 }
-                bucket = buckets[bucketIndex];
-                bucketIterator = bucket.iterator();
+                bucketIterator = buckets[bucketIndex].iterator();
             }
+
             return bucketIterator.hasNext();
         }
 
